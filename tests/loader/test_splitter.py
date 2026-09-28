@@ -59,6 +59,22 @@ class TestSplitter(unittest.TestCase):
             # With smaller offset, wider_text should be shorter than the full original text
             self.assertLessEqual(len(chunk.metadata["wider_text"]), len(original_text))
     
+    def test_sentence_window_split_repeated_text(self):
+        """Test that repeated text gets the context window of its own position."""
+        original_text = "x" + "." * 20 + "y" + "-" * 20 + "x"
+        original_doc = Document(page_content=original_text, metadata={"reference": "test_doc"})
+        split_docs = [
+            Document(page_content="x", metadata={"reference": "test_doc"}),
+            Document(page_content="y", metadata={"reference": "test_doc"}),
+            Document(page_content="x", metadata={"reference": "test_doc"}),
+        ]
+
+        chunks = _sentence_window_split(split_docs, original_doc, offset=3)
+
+        self.assertEqual(chunks[0].metadata["wider_text"], "x...")
+        self.assertEqual(chunks[1].metadata["wider_text"], "...y---")
+        self.assertEqual(chunks[2].metadata["wider_text"], "---x")
+
     def test_split_docs_to_chunks(self):
         """Test split_docs_to_chunks function."""
         # Create test documents

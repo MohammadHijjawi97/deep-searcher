@@ -63,10 +63,16 @@ def _sentence_window_split(
     """
     chunks = []
     original_text = original_document.page_content
+    search_start = 0
     for doc in split_docs:
         doc_text = doc.page_content
-        start_index = original_text.index(doc_text)
-        end_index = start_index + len(doc_text) - 1
+        # Split docs are in document order, so search from the previous match to
+        # locate repeated text at its own position instead of its first occurrence.
+        start_index = original_text.find(doc_text, search_start)
+        if start_index == -1:
+            start_index = original_text.index(doc_text)
+        search_start = start_index + 1
+        end_index = start_index + len(doc_text)
         wider_text = original_text[
             max(0, start_index - offset) : min(len(original_text), end_index + offset)
         ]
