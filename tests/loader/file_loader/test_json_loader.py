@@ -116,8 +116,22 @@ class TestJsonFileLoader(unittest.TestCase):
         """Test the supported_file_types property."""
         file_types = self.loader.supported_file_types
         self.assertIsInstance(file_types, list)
-        self.assertIn("txt", file_types)
-        self.assertIn("md", file_types)
+        self.assertEqual(sorted(file_types), ["json", "jsonl"])
+
+    def test_load_directory(self):
+        """Test that load_directory loads JSON/JSONL files and skips other files."""
+        with open(os.path.join(self.temp_dir.name, "notes.md"), "w", encoding="utf-8") as f:
+            f.write("This is not JSON.")
+        os.remove(self.invalid_json_file_path)
+        os.remove(self.invalid_jsonl_file_path)
+
+        documents = self.loader.load_directory(self.temp_dir.name)
+
+        self.assertEqual(len(documents), 4)
+        self.assertEqual(
+            sorted(doc.metadata["reference"] for doc in documents),
+            sorted([self.json_file_path] * 2 + [self.jsonl_file_path] * 2),
+        )
 
 
 if __name__ == "__main__":
