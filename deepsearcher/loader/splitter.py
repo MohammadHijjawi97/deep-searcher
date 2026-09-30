@@ -70,12 +70,17 @@ def _sentence_window_split(
         # locate repeated text at its own position instead of its first occurrence.
         start_index = original_text.find(doc_text, search_start)
         if start_index == -1:
-            start_index = original_text.index(doc_text)
-        search_start = start_index + 1
-        end_index = start_index + len(doc_text)
-        wider_text = original_text[
-            max(0, start_index - offset) : min(len(original_text), end_index + offset)
-        ]
+            start_index = original_text.find(doc_text)
+        if start_index == -1:
+            # The chunk text is not a substring of the original text (e.g. the
+            # splitter normalized it), so there is no position to widen around.
+            wider_text = doc_text
+        else:
+            search_start = start_index + 1
+            end_index = start_index + len(doc_text)
+            wider_text = original_text[
+                max(0, start_index - offset) : min(len(original_text), end_index + offset)
+            ]
         reference = doc.metadata.pop("reference", "")
         doc.metadata["wider_text"] = wider_text
         chunk = Chunk(text=doc_text, reference=reference, metadata=doc.metadata)

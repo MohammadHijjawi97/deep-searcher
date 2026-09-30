@@ -75,6 +75,22 @@ class TestSplitter(unittest.TestCase):
         self.assertEqual(chunks[1].metadata["wider_text"], "...y---")
         self.assertEqual(chunks[2].metadata["wider_text"], "---x")
 
+    def test_sentence_window_split_text_not_in_original(self):
+        """Test that a chunk missing from the original text falls back to its own text."""
+        original_doc = Document(page_content="alpha beta", metadata={"reference": "test_doc"})
+        split_docs = [
+            Document(page_content="alpha", metadata={"reference": "test_doc"}),
+            Document(page_content="gamma", metadata={"reference": "test_doc"}),
+            Document(page_content="beta", metadata={"reference": "test_doc"}),
+        ]
+
+        chunks = _sentence_window_split(split_docs, original_doc, offset=2)
+
+        self.assertEqual(len(chunks), 3)
+        self.assertEqual(chunks[0].metadata["wider_text"], "alpha b")
+        self.assertEqual(chunks[1].metadata["wider_text"], "gamma")
+        self.assertEqual(chunks[2].metadata["wider_text"], "a beta")
+
     def test_split_docs_to_chunks(self):
         """Test split_docs_to_chunks function."""
         # Create test documents
