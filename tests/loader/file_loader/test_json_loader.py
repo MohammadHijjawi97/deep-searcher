@@ -120,17 +120,25 @@ class TestJsonFileLoader(unittest.TestCase):
 
     def test_load_directory(self):
         """Test that load_directory loads JSON/JSONL files and skips other files."""
-        with open(os.path.join(self.temp_dir.name, "notes.md"), "w", encoding="utf-8") as f:
-            f.write("This is not JSON.")
-        os.remove(self.invalid_json_file_path)
-        os.remove(self.invalid_jsonl_file_path)
+        with tempfile.TemporaryDirectory() as dir_path:
+            json_path = os.path.join(dir_path, "docs.json")
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump([{"text": "json document"}], f)
+            jsonl_path = os.path.join(dir_path, "docs.jsonl")
+            with open(jsonl_path, "w", encoding="utf-8") as f:
+                f.write(json.dumps({"text": "jsonl document"}) + "\n")
+            md_path = os.path.join(dir_path, "notes.md")
+            with open(md_path, "w", encoding="utf-8") as f:
+                f.write("This is not JSON.")
 
-        documents = self.loader.load_directory(self.temp_dir.name)
+            documents = self.loader.load_directory(dir_path)
 
-        self.assertEqual(len(documents), 4)
+        references = sorted(doc.metadata["reference"] for doc in documents)
+        self.assertEqual(references, sorted([json_path, jsonl_path]))
+        self.assertNotIn(md_path, references)
         self.assertEqual(
-            sorted(doc.metadata["reference"] for doc in documents),
-            sorted([self.json_file_path] * 2 + [self.jsonl_file_path] * 2),
+            sorted(doc.page_content for doc in documents),
+            ["json document", "jsonl document"],
         )
 
 
